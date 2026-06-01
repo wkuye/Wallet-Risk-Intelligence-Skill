@@ -1,26 +1,21 @@
 {
-  "name": "pharos-wallet-reputation",
+  "name": "pharos-wallet-analyzer-skill",
   "version": "1.0.0",
-  "main": "index.js",
-
-  "scripts":{
-      "dev":"nodemon src/index.ts",
-      "start":"ts-node src/index.ts",
-      "build":"tsc"
+  "description": "Pharos Agent Center Skill — analyzes wallet reputation, activity, and risk signals using the Pharos public RPC.",
+  "main": "src/index.ts",
+  "scripts": {
+    "start": "node --require ts-node/register src/index.ts",
+    "build": "tsc",
+    "analyze": "node --require ts-node/register src/index.ts"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "description": "",
-  "dependencies": {
-    "axios": "^1.16.1",
-    "dotenv": "^17.4.2",
-    "ethers": "^6.16.0"
-  },
+  "keywords": ["pharos", "wallet", "analyzer", "skill", "agent-center", "onchain", "reputation"],
+  "license": "MIT-0",
   "devDependencies": {
-    "@types/node": "^25.9.1",
-    "nodemon": "^3.1.14",
-    "ts-node": "^10.9.2",
-    "typescript": "^6.0.3"
+    "typescript": "^5.0.0",
+    "ts-node": "^10.9.0",
+    "@types/node": "^20.0.0"
+  },
+  "engines": {
+    "node": ">=18"
   }
 }

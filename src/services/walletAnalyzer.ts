@@ -1,53 +1,89 @@
-import { getWalletData } from "./etherscan";
+// analyzeWallet.ts
+// Main entry point for the Pharos Wallet Analyzer Skill.
+// Wired to the Pharos public RPC — no Etherscan, no API key needed.
+
+import { getWalletData } from "./pharos";
 import { calculateScore } from "./scorer";
 import { explain } from "./explainer";
 
-export async function analyzeWallet(address: string) {
+export interface WalletAnalysis {
+  wallet: string;
+  balance: string;
+  score: number;
+  reputation: string;
+  summary: string;
+  riskSignals: string[];
+  metrics: {
+    txCount: number;
+    activityLevel: "Low" | "Medium" | "High";
+    longevity: "New" | "Mid-term" | "Long-term" | "Unknown";
+  };
+  scoreBreakdown: {
+    activityScore: number;
+    balanceScore: number;
+    consistencyScore: number;
+    longevityScore: number;
+  };
+}
+
+export async function analyzeWallet(address: string): Promise<WalletAnalysis> {
+  // Validate address format before making any RPC calls
+  if (!/^0x[0-9a-fA-F]{40}$/.test(address)) {
+    throw new Error(`Invalid EVM address: ${address}`);
+  }
 
   const data = await getWalletData(address);
 
-  const txs = Array.isArray(data.transactions)
-    ? data.transactions
-    : [];
+  const txs = Array.isArray(data.transactions) ? data.transactions : [];
+  const txCount = data.txCount; // sourced from eth_getTransactionCount (nonce)
 
-  const txCount = txs.length;
-
-  const { score } = calculateScore(data);
+  // Only score if there is actual onchain activity
+  const { score, breakdown } =
+    txCount > 0 ? calculateScore(data) : {
+      score: 0,
+      breakdown: {
+        activityScore: 0,
+        balanceScore: 0,
+        consistencyScore: 0,
+        longevityScore: 0,
+      },
+    };
 
   const explanation = explain(score);
 
-  const botAnalysis = detectBotLikelihood(txs);
-
-
-  let scoreContext = "Neutral";
-
-  if (score >= 80) scoreContext = "Strong onchain reliability";
-  else if (score >= 60) scoreContext = "Moderate reliability";
-  else if (score >= 40) scoreContext = "Weak reliability signals";
-  else scoreContext = "High uncertainty / risk profile";
-
+  // ----------------------------
+  // ACTIVITY LEVEL
+  // ----------------------------
   let activityLevel: "Low" | "Medium" | "High" = "Low";
 
   if (txCount > 1000) activityLevel = "High";
   else if (txCount > 200) activityLevel = "Medium";
 
-
+  // ----------------------------
+  // LONGEVITY
+  // Sort ascending so [0] is always the oldest tx,
+  // regardless of RPC return order.
+  // ----------------------------
   let longevity: "New" | "Mid-term" | "Long-term" | "Unknown" = "Unknown";
 
-  const firstTx = txs[txs.length - 1];
+  const oldestTx =
+    txs.length > 0
+      ? [...txs].sort((a, b) => Number(a.timeStamp) - Number(b.timeStamp))[0]
+      : null;
 
-  if (firstTx?.timeStamp) {
-
+  if (oldestTx?.timeStamp) {
     const ageDays =
-      (Date.now() - Number(firstTx.timeStamp) * 1000)
-      / (1000 * 60 * 60 * 24);
+      (Date.now() - Number(oldestTx.timeStamp) * 1000) /
+      (1000 * 60 * 60 * 24);
 
     if (ageDays > 365) longevity = "Long-term";
     else if (ageDays > 90) longevity = "Mid-term";
     else longevity = "New";
   }
 
-
+  // ----------------------------
+  // RISK SIGNALS
+  // ----------------------------
   const riskSignals: string[] = [];
 
   if (txCount === 0) {
@@ -55,134 +91,44 @@ export async function analyzeWallet(address: string) {
   }
 
   if (txCount > 0 && txCount < 20) {
-    riskSignals.push("Low activity wallet - limited behavioral history");
+    riskSignals.push("Low activity wallet — limited behavioral history");
   }
 
-  if (score < 50 && txCount > 0) {
+  // Only flag weak score if there is enough history to judge
+  if (score < 50 && txCount >= 20) {
     riskSignals.push("Weak behavioral pattern consistency");
   }
 
   if (txCount > 5000) {
-    riskSignals.push("High activity wallet - possible bot or automation behavior");
-  }
-
-  if (botAnalysis.isLikelyBot) {
     riskSignals.push(
-      `Behavioral anomaly detected: ${botAnalysis.reasons.join(", ")}`
+      "High activity wallet — possible bot or automation behavior"
     );
   }
 
-
-  let reputation = explanation.label;
+  // ----------------------------
+  // REPUTATION
+  // Align label confidence with available data quality.
+  // ----------------------------
+  let reputation: string = explanation.label;
 
   if (txCount === 0) {
     reputation = "Unknown";
+  } else if (txCount < 20) {
+    reputation = "Unverified"; // too thin to trust the label
   }
-
-  if (botAnalysis.isLikelyBot && score >= 80) {
-    reputation = "Normal";
-  }
-
- 
-  function generateSummary() {
-
-    if (txCount === 0) {
-      return "This wallet has no onchain activity and cannot yet be behaviorally classified.";
-    }
-
-    if (botAnalysis.isLikelyBot) {
-      return "This wallet shows automated behavioral patterns including high-frequency transactions and low contract diversity, indicating probable bot-driven activity.";
-    }
-
-    if (activityLevel === "High" && longevity === "Long-term") {
-      return "This wallet demonstrates long-term consistent onchain activity with strong behavioral stability and diverse protocol interactions.";
-    }
-
-    if (activityLevel === "Low") {
-      return "This wallet shows limited onchain engagement with low behavioral history, making classification less reliable.";
-    }
-
-    return `This wallet shows ${scoreContext.toLowerCase()} with moderate onchain interaction patterns across observed transactions.`;
-  }
-
 
   return {
     wallet: address,
+    balance: data.balanceEther,
     score,
     reputation,
-    summary: generateSummary(),
-
+    summary: explanation.summary,
     riskSignals,
-
     metrics: {
       txCount,
       activityLevel,
-      longevity
+      longevity,
     },
-
-    botRisk: {
-      score: botAnalysis.botScore,
-      isLikely: botAnalysis.isLikelyBot,
-      reasons: botAnalysis.reasons
-    },
-
-    meta: {
-      scoreContext
-    }
-  };
-}
-
-
-function detectBotLikelihood(txs: any[]) {
-
-  let botScore = 0;
-  const reasons: string[] = [];
-
-  if (!Array.isArray(txs) || txs.length === 0) {
-    return { botScore: 0, isLikelyBot: false, reasons: [] };
-  }
-
-  // volume
-  if (txs.length > 5000) {
-    botScore += 30;
-    reasons.push("Extremely high transaction volume");
-  } else if (txs.length > 1000) {
-    botScore += 20;
-    reasons.push("High transaction volume");
-  }
-
-  // timing analysis
-  const timestamps = txs
-    .map(t => Number(t.timeStamp))
-    .filter(Boolean)
-    .sort((a, b) => a - b);
-
-  let rapid = 0;
-
-  for (let i = 1; i < timestamps.length; i++) {
-    const diff = timestamps[i] - timestamps[i - 1];
-
-    if (diff < 30) rapid++;
-  }
-
-  if (rapid > 100) {
-    botScore += 25;
-    reasons.push("Frequent rapid transaction bursts");
-  }
-
-  // contract diversity
-  const uniqueContracts = new Set(
-    txs.map(t => t.to?.toLowerCase()).filter(Boolean)
-  ).size;
-
-  if (txs.length > 100 && uniqueContracts < 5) {
-    botScore += 20;
-    reasons.push("Low contract diversity (repetitive behavior)");
-  }
-
-  return {
-    botScore,
-    isLikelyBot: botScore >= 60,
-    reasons
+    scoreBreakdown: breakdown,
   };
 }
