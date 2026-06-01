@@ -1,0 +1,50 @@
+{
+  "networks": [
+    {
+      "name": "atlantic-testnet",
+      "type": "testnet",
+      "chainId": "0x688",
+      "chainIdDecimal": 1672,
+      "rpcUrl": "https://rpc.pharos.xyz",
+      "explorerUrl": "https://pharosscan.xyz",
+      "explorerApiUrl": "https://pharosscan.xyz/api",
+      "nativeCurrency": {
+        "name": "Pharos",
+        "symbol": "PHRS",
+        "decimals": 18
+      },
+      "knownTokens": [
+        {
+          "symbol": "USDC",
+          "address": "0x72df0bcd7276f2dFbAc7e6f80aE57b14b2c0E1B7",
+          "decimals": 6
+        },
+        {
+          "symbol": "USDT",
+          "address": "0xEd59De2D7ad9C043442e381231eE3646FC3C2939",
+          "decimals": 6
+        },
+        {
+          "symbol": "WPHRS",
+          "address": "0x76aaaDA469D23216BE5f7C596fA25F282Ff9b364",
+          "decimals": 18
+        }
+      ]
+    },
+    {
+      "name": "mainnet",
+      "type": "mainnet",
+      "chainId": "0x1EB8",
+      "chainIdDecimal": 7864,
+      "rpcUrl": "https://mainnet.pharos.xyz",
+      "explorerUrl": "https://explorer.pharos.xyz",
+      "explorerApiUrl": "https://explorer.pharos.xyz/api",
+      "nativeCurrency": {
+        "name": "Pharos",
+        "symbol": "PHRS",
+        "decimals": 18
+      },
+      "knownTokens": []
+    }
+  ]
+}
