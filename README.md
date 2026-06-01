@@ -111,16 +111,7 @@ By transforming raw blockchain activity into structured behavioral intelligence,
 
 ---
 
-## Agent Recommendations
 
-| Recommendation | Meaning |
-|---------------|---------|
-| SAFE_TO_INTERACT | Wallet appears trustworthy |
-| PROCEED_WITH_CAUTION | Some risk indicators present |
-| REVIEW_REQUIRED | Significant behavioral concerns |
-| INSUFFICIENT_DATA | Not enough activity to assess |
-
----
 
 ## Project Structure
 
