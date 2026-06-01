@@ -237,4 +237,4 @@ MIT License
 
 ---
 
-Built for the Pharos Agent Center Skill Builder Campaign 🚀
+Built for the Pharos Agent Center Skill Builder Campaign 
