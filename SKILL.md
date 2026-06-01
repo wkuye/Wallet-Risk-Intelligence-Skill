@@ -1,3 +1,17 @@
+---
+name: pharos-wallet-analyzer
+description: >
+  Analyzes any wallet address on Pharos — native balance, transaction count,
+  token holdings, activity level, wallet age, behavioral reputation score,
+  and risk signals. Uses cast/forge commands targeting Pharos RPC.
+  Invoke when the user asks about a wallet's reputation, history, trust level,
+  bot detection, or portfolio summary on the Pharos network.
+version: 1.0.0
+requires:
+  anyBins:
+    - cast
+    - forge
+---
 
 # Pharos Wallet Analyzer Skill
 
