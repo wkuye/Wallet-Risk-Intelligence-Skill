@@ -79,7 +79,7 @@ By transforming raw blockchain activity into structured behavioral intelligence,
   "wallet": "0x742d35Cc6634C0532925a3b844Bc454e4438f44e",
   "score": 82,
   "reputation": "Trusted",
-  "recommendation": "SAFE_TO_INTERACT",
+ 
   "summary": "This wallet has maintained consistent onchain activity over multiple years and interacts with a diverse set of contracts. No significant behavioral anomalies were detected, resulting in a strong trust assessment.",
   "riskSignals": [],
   "metrics": {
